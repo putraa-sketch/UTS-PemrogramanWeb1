@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Toko Buku Online</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>📚 Toko Buku Online</h1>
+            <div class="user-info">
+                <span id="userName">User</span>
+                <span id="userRole" style="background: #667eea; color: white; padding: 4px 12px; border-radius: 4px; font-size: 0.85rem; margin-right: 10px;">User</span>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <h2 id="greeting">Selamat Datang</h2>
+            <p>Selamat datang di sistem manajemen toko buku online. Pilih menu di bawah untuk memulai.</p>
+        </div>
+
+        <div class="menu-grid">
+            <a href="stok.html" class="menu-card">
+                <div class="menu-icon">📦</div>
+                <h3>Katalog Buku</h3>
+                <p>Kelola informasi stok dan katalog buku</p>
+            </a>
+
+            <a href="tracking.html" class="menu-card">
+                <div class="menu-icon">🚚</div>
+                <h3>Tracking Pengiriman</h3>
+                <p>Lacak status pengiriman pesanan</p>
+            </a>
+
+            <a href="checkout.html" class="menu-card">
+                <div class="menu-icon">🛒</div>
+                <h3>Pemesanan</h3>
+                <p>Buat pesanan baru</p>
+            </a>
+
+            <a href="#" id="laporanLink" class="menu-card">
+                <div class="menu-icon">📊</div>
+                <h3>Laporan Pemesanan</h3>
+                <p>Lihat laporan pemesanan</p>
+            </a>
+
+            <a href="#" id="historyLink" class="menu-card">
+                <div class="menu-icon">📜</div>
+                <h3>History Transaksi</h3>
+                <p>Riwayat semua transaksi</p>
+            </a>
+
+            <a href="#" id="profilLink" class="menu-card">
+                <div class="menu-icon">👤</div>
+                <h3>Profil Saya</h3>
+                <p>Kelola profil akun Anda</p>
+            </a>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+        // Cek login
+        const loginData = checkLogin();
+        
+        // Update greeting dan nama user
+        document.getElementById('greeting').textContent = `${getGreeting()}, ${loginData.nama}!`;
+        document.getElementById('userName').textContent = loginData.nama;
+        document.getElementById('userRole').textContent = loginData.role;
+        
+        // Event listener untuk laporan pemesanan
+        document.getElementById('laporanLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            // Hitung statistik
+            const totalTransaksi = dataTransaksi.length;
+            const totalPendapatan = dataTransaksi.reduce((sum, trx) => {
+                return sum + parseHarga(trx.total);
+            }, 0);
+            const transaksiSelesai = dataTransaksi.filter(t => t.status === 'Selesai').length;
+            const transaksiProses = dataTransaksi.filter(t => t.status !== 'Selesai').length;
+            
+            const content = `
+                <div style="padding: 10px;">
+                    <div class="grid grid-2" style="margin-bottom: 20px;">
+                        <div style="background: #667eea; color: white; padding: 20px; border-radius: 8px; text-align: center;">
+                            <h3 style="margin: 0; font-size: 2rem;">${totalTransaksi}</h3>
+                            <p style="margin: 5px 0 0 0;">Total Transaksi</p>
+                        </div>
+                        <div style="background: #27ae60; color: white; padding: 20px; border-radius: 8px; text-align: center;">
+                            <h3 style="margin: 0; font-size: 1.5rem;">${formatRupiah(totalPendapatan)}</h3>
+                            <p style="margin: 5px 0 0 0;">Total Pendapatan</p>
+                        </div>
+                        <div style="background: #3498db; color: white; padding: 20px; border-radius: 8px; text-align: center;">
+                            <h3 style="margin: 0; font-size: 2rem;">${transaksiSelesai}</h3>
+                            <p style="margin: 5px 0 0 0;">Transaksi Selesai</p>
+                        </div>
+                        <div style="background: #f39c12; color: white; padding: 20px; border-radius: 8px; text-align: center;">
+                            <h3 style="margin: 0; font-size: 2rem;">${transaksiProses}</h3>
+                            <p style="margin: 5px 0 0 0;">Dalam Proses</p>
+                        </div>
+                    </div>
+                    <h4 style="margin-top: 20px; color: #667eea;">Transaksi Terbaru</h4>
+                    <table class="table" style="font-size: 0.9rem;">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tanggal</th>
+                                <th>Pemesan</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${dataTransaksi.slice(-5).reverse().map(trx => `
+                                <tr>
+                                    <td>${trx.id}</td>
+                                    <td>${formatTanggal(trx.tanggal)}</td>
+                                    <td>${trx.namaPemesan}</td>
+                                    <td>${trx.total}</td>
+                                    <td><span style="padding: 4px 8px; border-radius: 4px; background: ${trx.status === 'Selesai' ? '#27ae60' : '#f39c12'}; color: white; font-size: 0.85rem;">${trx.status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            createModal('Laporan Pemesanan', content);
+        });
+        
+        // Event listener untuk history transaksi
+        document.getElementById('historyLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const content = `
+                <div style="padding: 10px;">
+                    <table class="table" style="font-size: 0.85rem;">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Tanggal</th>
+                                <th>Pemesan</th>
+                                <th>Items</th>
+                                <th>Total</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${dataTransaksi.map(trx => `
+                                <tr>
+                                    <td>${trx.id}</td>
+                                    <td>${formatTanggal(trx.tanggal)}</td>
+                                    <td>${trx.namaPemesan}</td>
+                                    <td>${trx.items.length} items</td>
+                                    <td>${trx.total}</td>
+                                    <td><span style="padding: 4px 8px; border-radius: 4px; background: ${trx.status === 'Selesai' ? '#27ae60' : trx.status === 'Diproses' ? '#f39c12' : '#3498db'}; color: white; font-size: 0.8rem;">${trx.status}</span></td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            createModal('History Transaksi', content);
+        });
+        
+        // Event listener untuk profil
+        document.getElementById('profilLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const content = `
+                <div style="padding: 10px;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <div style="width: 100px; height: 100px; border-radius: 50%; background: #667eea; color: white; display: flex; align-items: center; justify-content: center; font-size: 3rem; margin: 0 auto;">
+                            ${loginData.nama.charAt(0).toUpperCase()}
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Nama</label>
+                        <input type="text" value="${loginData.nama}" readonly style="background: #f8f9fa;">
+                    </div>
+                    <div class="form-group">
+                        <label>Email</label>
+                        <input type="email" value="${loginData.email}" readonly style="background: #f8f9fa;">
+                    </div>
+                    <div class="form-group">
+                        <label>Role</label>
+                        <input type="text" value="${loginData.role}" readonly style="background: #f8f9fa;">
+                    </div>
+                    <button class="btn btn-primary btn-block" onclick="closeModal()">Tutup</button>
+                </div>
+            `;
+            createModal('Profil Saya', content);
+        });
+    </script>
+</body>
+</html>

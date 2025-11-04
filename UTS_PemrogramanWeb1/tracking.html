@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tracking Pengiriman - Toko Buku Online</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>📚 Toko Buku Online</h1>
+            <div class="user-info">
+                <span id="userName">User</span>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <!-- Form Pencarian -->
+        <div class="card">
+            <h2>🔍 Cari Paket Anda</h2>
+            <form id="formTracking">
+                <div style="display: flex; gap: 10px; align-items: flex-end;">
+                    <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                        <label for="nomorDO">Nomor Delivery Order</label>
+                        <input type="text" id="nomorDO" placeholder="Contoh: 20230012" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary" style="margin-bottom: 0;">Cari</button>
+                </div>
+            </form>
+            <div style="margin-top: 15px; padding: 10px; background: #e7f3ff; border-radius: 5px;">
+                <p style="margin: 0; font-size: 14px;">💡 Contoh nomor DO: <strong>20230012</strong>, <strong>20230013</strong></p>
+            </div>
+        </div>
+
+        <!-- Hasil Tracking -->
+        <div id="hasilTracking" style="display: none;">
+            <!-- Info Pemesan -->
+            <div class="card">
+                <h3 style="color: #667eea; margin-bottom: 15px;">👤 Informasi Pemesan</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                    <div>
+                        <p style="color: #666; margin-bottom: 5px; font-size: 0.9rem;">Nama Pemesan</p>
+                        <p style="font-weight: 600; font-size: 1.1em;" id="namaPemesan">-</p>
+                    </div>
+                    <div>
+                        <p style="color: #666; margin-bottom: 5px; font-size: 0.9rem;">Nomor Delivery Order</p>
+                        <p style="font-weight: 600; font-size: 1.1em;" id="nomorDOInfo">-</p>
+                    </div>
+                    <div>
+                        <p style="color: #666; margin-bottom: 5px; font-size: 0.9rem;">Total Pembayaran</p>
+                        <p style="font-weight: 600; font-size: 1.1em; color: #27ae60;" id="totalPembayaran">-</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Status Pengiriman -->
+            <div class="card">
+                <h3 style="color: #667eea; margin-bottom: 15px;">📦 Status Pengiriman</h3>
+                <div style="text-align: center; margin: 20px 0;">
+                    <p style="font-size: 1.5em; font-weight: 600; color: #667eea; margin-bottom: 15px;" id="statusPengiriman">-</p>
+                    <div class="progress-bar-container">
+                        <div class="progress-bar" id="progressBar" style="width: 0%;">0%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Detail Ekspedisi -->
+            <div class="card">
+                <h3 style="color: #667eea; margin-bottom: 15px;">🚛 Detail Ekspedisi</h3>
+                <table style="margin-top: 0; width: 100%;">
+                    <tr>
+                        <td style="width: 200px; font-weight: 600; padding: 10px 0;">Ekspedisi</td>
+                        <td id="ekspedisi" style="padding: 10px 0;">-</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; padding: 10px 0;">Tanggal Kirim</td>
+                        <td id="tanggalKirim" style="padding: 10px 0;">-</td>
+                    </tr>
+                    <tr>
+                        <td style="font-weight: 600; padding: 10px 0;">Jenis Paket</td>
+                        <td id="jenisPaket" style="padding: 10px 0;">-</td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Riwayat Tracking -->
+            <div class="card">
+                <h3 style="color: #667eea; margin-bottom: 15px;">📜 Riwayat Pengiriman</h3>
+                <div id="riwayatTracking">
+                    <!-- Riwayat akan dimuat di sini -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Pesan Error -->
+        <div id="pesanError" class="card" style="display: none;">
+            <div style="padding: 20px; background: #ffe7e7; border-left: 4px solid #e74c3c; border-radius: 5px;">
+                <h4 style="margin-bottom: 10px; color: #e74c3c;">❌ Data Tidak Ditemukan</h4>
+                <p style="margin: 0; color: #666;">Nomor Delivery Order yang Anda masukkan tidak ditemukan. Pastikan nomor yang dimasukkan benar.</p>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="dashboard.html" class="btn btn-secondary">Kembali ke Dashboard</a>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+        // Cek login
+        const loginData = checkLogin();
+        document.getElementById('userName').textContent = loginData.nama;
+
+        // Fungsi untuk mendapatkan progress berdasarkan status
+        function getProgress(status) {
+            const progressMap = {
+                'Dikirim': 100,
+                'Dalam Perjalanan': 60,
+                'Diproses': 30,
+                'Dikemas': 20
+            };
+            return progressMap[status] || 0;
+        }
+
+        // Fungsi untuk mendapatkan warna status
+        function getStatusColor(status) {
+            const colors = {
+                'Dikirim': '#27ae60',
+                'Dalam Perjalanan': '#17a2b8',
+                'Diproses': '#f39c12',
+                'Dikemas': '#ffc107'
+            };
+            return colors[status] || '#667eea';
+        }
+
+        // Handle form submit
+        document.getElementById('formTracking').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const nomorDO = document.getElementById('nomorDO').value.trim();
+            
+            // Cari data tracking
+            const tracking = dataTracking[nomorDO];
+            
+            if (tracking) {
+                // Data ditemukan
+                document.getElementById('pesanError').style.display = 'none';
+                document.getElementById('hasilTracking').style.display = 'block';
+                
+                // Isi informasi pemesan
+                document.getElementById('namaPemesan').textContent = tracking.nama;
+                document.getElementById('nomorDOInfo').textContent = tracking.nomorDO;
+                document.getElementById('totalPembayaran').textContent = tracking.total;
+                
+                // Isi status pengiriman
+                document.getElementById('statusPengiriman').textContent = tracking.status;
+                document.getElementById('statusPengiriman').style.color = getStatusColor(tracking.status);
+                
+                const progress = getProgress(tracking.status);
+                const progressBar = document.getElementById('progressBar');
+                progressBar.style.width = progress + '%';
+                progressBar.textContent = progress + '%';
+                
+                // Isi detail ekspedisi
+                document.getElementById('ekspedisi').textContent = tracking.ekspedisi;
+                document.getElementById('tanggalKirim').textContent = formatTanggal(tracking.tanggalKirim);
+                document.getElementById('jenisPaket').textContent = tracking.paket;
+                
+                // Isi riwayat tracking
+                const riwayatDiv = document.getElementById('riwayatTracking');
+                riwayatDiv.innerHTML = '';
+                
+                tracking.perjalanan.forEach((item, index) => {
+                    const isLast = index === tracking.perjalanan.length - 1;
+                    const itemHTML = `
+                        <div style="display: flex; margin-bottom: ${isLast ? '0' : '25px'};">
+                            <div style="flex-shrink: 0; width: 40px; text-align: center; position: relative;">
+                                <div style="width: 20px; height: 20px; background: ${isLast ? '#667eea' : '#27ae60'}; border-radius: 50%; margin: 0 auto; position: relative; z-index: 1;"></div>
+                                ${!isLast ? '<div style="width: 2px; height: calc(100% + 25px); background: #ddd; margin: 0 auto; position: absolute; top: 20px; left: 50%; transform: translateX(-50%);"></div>' : ''}
+                            </div>
+                            <div style="flex: 1; padding-left: 15px;">
+                                <p style="font-weight: 600; margin-bottom: 5px; color: #333;">${item.keterangan}</p>
+                                <p style="color: #999; font-size: 14px; margin: 0;">📅 ${item.waktu}</p>
+                            </div>
+                        </div>
+                    `;
+                    riwayatDiv.innerHTML += itemHTML;
+                });
+                
+                // Scroll ke hasil
+                document.getElementById('hasilTracking').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                // Data tidak ditemukan
+                document.getElementById('hasilTracking').style.display = 'none';
+                document.getElementById('pesanError').style.display = 'block';
+                document.getElementById('pesanError').scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    </script>
+</body>
+</html>

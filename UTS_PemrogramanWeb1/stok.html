@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Katalog Buku - Toko Buku Online</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <header>
+        <div class="container">
+            <h1>📚 Toko Buku Online</h1>
+            <div class="user-info">
+                <span id="userName">User</span>
+                <button class="btn-logout" onclick="logout()">Logout</button>
+            </div>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 10px;">
+                <h2 style="margin: 0;">📦 Katalog Buku</h2>
+                <button class="btn btn-primary" id="btnTambahBuku">+ Tambah Buku</button>
+            </div>
+            
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="searchInput" placeholder="Cari kode barang, nama buku, atau jenis barang..." style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 5px; font-size: 1rem;">
+            </div>
+
+            <div style="overflow-x: auto;">
+                <table class="table" id="tableBuku">
+                    <thead>
+                        <tr>
+                            <th style="text-align: center;">Cover</th>
+                            <th>Kode Barang</th>
+                            <th>Nama Barang</th>
+                            <th>Jenis Barang</th>
+                            <th style="text-align: center;">Edisi</th>
+                            <th style="text-align: center;">Stok</th>
+                            <th>Harga</th>
+                            <th style="text-align: center;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBukuBody">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px;">
+                                <div style="color: #999;">
+                                    <div style="font-size: 3rem; margin-bottom: 10px;">📚</div>
+                                    <p>Memuat data...</p>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div style="text-align: center; margin-top: 20px;">
+            <a href="dashboard.html" class="btn btn-secondary">Kembali ke Dashboard</a>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+        // Cek login
+        const loginData = checkLogin();
+        document.getElementById('userName').textContent = loginData.nama;
+
+        // Variable untuk menyimpan data buku (copy dari dataKatalogBuku)
+        let bukuList = [...dataKatalogBuku];
+
+        // Fungsi untuk render tabel buku
+        function renderTabelBuku(data = bukuList) {
+            const tbody = document.getElementById('tableBukuBody');
+            tbody.innerHTML = '';
+
+            if (data.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px;">
+                            <div style="color: #999;">
+                                <div style="font-size: 3rem; margin-bottom: 10px;">🔍</div>
+                                <p>Tidak ada data buku ditemukan</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            data.forEach(buku => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td style="text-align: center;">
+                        <img src="${buku.cover}" 
+                             alt="${buku.namaBarang}" 
+                             style="width: 60px; height: 80px; object-fit: cover; border-radius: 4px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);" 
+                             onerror="this.src='https://via.placeholder.com/60x80?text=No+Image'">
+                    </td>
+                    <td><strong style="color: #667eea;">${buku.kodeBarang}</strong></td>
+                    <td>${buku.namaBarang}</td>
+                    <td><span style="background: #f0f4ff; padding: 4px 8px; border-radius: 4px; font-size: 0.85rem;">${buku.jenisBarang}</span></td>
+                    <td style="text-align: center;"><strong>${buku.edisi}</strong></td>
+                    <td style="text-align: center;">
+                        <span style="padding: 6px 12px; border-radius: 4px; background: ${buku.stok > 200 ? '#27ae60' : buku.stok > 100 ? '#f39c12' : '#e74c3c'}; color: white; font-weight: bold; font-size: 0.9rem;">
+                            ${buku.stok}
+                        </span>
+                    </td>
+                    <td><strong style="color: #27ae60;">${buku.harga}</strong></td>
+                    <td>
+                        <div class="table-actions" style="justify-content: center;">
+                            <button class="btn btn-primary btn-edit" data-kode="${buku.kodeBarang}" style="padding: 6px 12px; font-size: 0.85rem;">Edit</button>
+                            <button class="btn btn-danger btn-delete" data-kode="${buku.kodeBarang}" style="padding: 6px 12px; font-size: 0.85rem;">Hapus</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(row);
+            });
+
+            // Event listener untuk tombol edit
+            document.querySelectorAll('.btn-edit').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const kode = this.dataset.kode;
+                    editBuku(kode);
+                });
+            });
+
+            // Event listener untuk tombol hapus
+            document.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const kode = this.dataset.kode;
+                    hapusBuku(kode);
+                });
+            });
+        }
+
+        // Fungsi untuk tambah buku
+        document.getElementById('btnTambahBuku').addEventListener('click', function() {
+            const content = `
+                <form id="formTambahBuku">
+                    <div class="form-group">
+                        <label>Kode Barang *</label>
+                        <input type="text" id="kodeBarang" required placeholder="Contoh: ASIP4301">
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Barang *</label>
+                        <input type="text" id="namaBarang" required placeholder="Masukkan nama buku">
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Barang *</label>
+                        <select id="jenisBarang" required>
+                            <option value="">Pilih Jenis</option>
+                            <option value="Buku Ajar">Buku Ajar</option>
+                            <option value="Buku Referensi">Buku Referensi</option>
+                            <option value="Modul">Modul</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Edisi *</label>
+                        <input type="number" id="edisi" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Stok *</label>
+                        <input type="number" id="stok" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Harga (Rp) *</label>
+                        <input type="text" id="harga" required placeholder="Contoh: 180000">
+                    </div>
+                    <div class="form-group">
+                        <label>URL Cover (opsional)</label>
+                        <input type="text" id="cover" placeholder="img/nama_file.jpg atau URL gambar">
+                    </div>
+                    <button type="submit" class="btn btn-success btn-block">Simpan Buku</button>
+                </form>
+            `;
+            createModal('Tambah Buku Baru', content);
+
+            setTimeout(() => {
+                document.getElementById('formTambahBuku').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const kodeBarang = document.getElementById('kodeBarang').value.trim().toUpperCase();
+                    const harga = document.getElementById('harga').value.replace(/\D/g, '');
+                    
+                    // Cek duplikat kode
+                    if (bukuList.find(b => b.kodeBarang === kodeBarang)) {
+                        showAlert('Kode barang sudah ada!', 'error');
+                        return;
+                    }
+
+                    const bukuBaru = {
+                        kodeBarang: kodeBarang,
+                        namaBarang: document.getElementById('namaBarang').value,
+                        jenisBarang: document.getElementById('jenisBarang').value,
+                        edisi: document.getElementById('edisi').value,
+                        stok: parseInt(document.getElementById('stok').value),
+                        harga: formatRupiah(harga),
+                        cover: document.getElementById('cover').value || 'https://via.placeholder.com/60x80?text=No+Image'
+                    };
+
+                    bukuList.push(bukuBaru);
+                    renderTabelBuku();
+                    closeModal();
+                    showAlert('Buku berhasil ditambahkan!', 'success');
+                });
+            }, 100);
+        });
+
+        // Fungsi untuk edit buku
+        function editBuku(kode) {
+            const buku = bukuList.find(b => b.kodeBarang === kode);
+            if (!buku) return;
+
+            const hargaAngka = parseHarga(buku.harga);
+
+            const content = `
+                <form id="formEditBuku">
+                    <div class="form-group">
+                        <label>Kode Barang *</label>
+                        <input type="text" id="editKodeBarang" value="${buku.kodeBarang}" readonly style="background: #f0f0f0;">
+                    </div>
+                    <div class="form-group">
+                        <label>Nama Barang *</label>
+                        <input type="text" id="editNamaBarang" value="${buku.namaBarang}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Jenis Barang *</label>
+                        <select id="editJenisBarang" required>
+                            <option value="Buku Ajar" ${buku.jenisBarang === 'Buku Ajar' ? 'selected' : ''}>Buku Ajar</option>
+                            <option value="Buku Referensi" ${buku.jenisBarang === 'Buku Referensi' ? 'selected' : ''}>Buku Referensi</option>
+                            <option value="Modul" ${buku.jenisBarang === 'Modul' ? 'selected' : ''}>Modul</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Edisi *</label>
+                        <input type="number" id="editEdisi" value="${buku.edisi}" min="1" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Stok *</label>
+                        <input type="number" id="editStok" value="${buku.stok}" min="0" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Harga (Rp) *</label>
+                        <input type="text" id="editHarga" value="${hargaAngka}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>URL Cover</label>
+                        <input type="text" id="editCover" value="${buku.cover}">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Update Buku</button>
+                </form>
+            `;
+            createModal('Edit Buku', content);
+
+            setTimeout(() => {
+                document.getElementById('formEditBuku').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    const harga = document.getElementById('editHarga').value.replace(/\D/g, '');
+                    
+                    const index = bukuList.findIndex(b => b.kodeBarang === kode);
+                    bukuList[index] = {
+                        ...bukuList[index],
+                        namaBarang: document.getElementById('editNamaBarang').value,
+                        jenisBarang: document.getElementById('editJenisBarang').value,
+                        edisi: document.getElementById('editEdisi').value,
+                        stok: parseInt(document.getElementById('editStok').value),
+                        harga: formatRupiah(harga),
+                        cover: document.getElementById('editCover').value
+                    };
+
+                    renderTabelBuku();
+                    closeModal();
+                    showAlert('Buku berhasil diupdate!', 'success');
+                });
+            }, 100);
+        }
+
+        // Fungsi untuk hapus buku
+        function hapusBuku(kode) {
+            const buku = bukuList.find(b => b.kodeBarang === kode);
+            if (!buku) return;
+
+            if (confirm(`Apakah Anda yakin ingin menghapus buku "${buku.namaBarang}"?`)) {
+                bukuList = bukuList.filter(b => b.kodeBarang !== kode);
+                renderTabelBuku();
+                showAlert('Buku berhasil dihapus!', 'success');
+            }
+        }
+
+        // Fungsi pencarian
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const keyword = e.target.value.toLowerCase();
+            const filtered = bukuList.filter(buku => 
+                buku.kodeBarang.toLowerCase().includes(keyword) ||
+                buku.namaBarang.toLowerCase().includes(keyword) ||
+                buku.jenisBarang.toLowerCase().includes(keyword)
+            );
+            renderTabelBuku(filtered);
+        });
+
+        // Render pertama kali
+        console.log('Data Buku:', bukuList); // Debug
+        renderTabelBuku();
+    </script>
+</body>
+</html>

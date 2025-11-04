@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Toko Buku Online</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <h2>📚 Toko Buku Online</h2>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" name="email" required placeholder="Masukkan email Anda">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" required placeholder="Masukkan password Anda">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block">Login</button>
+                <div class="login-links">
+                    <a href="#" id="lupaPasswordLink">Lupa Password?</a>
+                    <a href="#" id="daftarLink">Daftar</a>
+                </div>
+            </form>
+            
+            <!-- Info Login untuk Testing -->
+            <div style="margin-top: 20px; padding: 15px; background: #f0f4ff; border-radius: 5px; font-size: 0.85rem;">
+                <strong>Data Login untuk Testing:</strong><br>
+                <small>rina@gmail.com / rina123</small><br>
+                <small>agus@gmail.com / agus123</small><br>
+                <small>siti@gmail.com / siti123 (Admin)</small>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/data.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+        // Event listener untuk form login
+        document.getElementById('loginForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            
+            // Validasi email format
+            if (!validateEmail(email)) {
+                showAlert('Format email tidak valid!', 'error');
+                return;
+            }
+            
+            // Cek kredensial menggunakan dataPengguna
+            const user = dataPengguna.find(u => u.email === email && u.password === password);
+            
+            if (user) {
+                saveLoginData(user.email, user.nama, user.role);
+                showAlert('Login berhasil! Mengalihkan...', 'success');
+                setTimeout(() => {
+                    window.location.href = 'dashboard.html';
+                }, 1500);
+            } else {
+                showAlert('Email atau password yang Anda masukkan salah!', 'error');
+            }
+        });
+        
+        // Event listener untuk lupa password
+        document.getElementById('lupaPasswordLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            const content = `
+                <form id="resetPasswordForm">
+                    <div class="form-group">
+                        <label for="resetEmail">Email</label>
+                        <input type="email" id="resetEmail" required placeholder="Masukkan email Anda">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Reset Password</button>
+                </form>
+            `;
+            createModal('Lupa Password', content);
+            
+            // Handle form reset password
+            setTimeout(() => {
+                document.getElementById('resetPasswordForm').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const email = document.getElementById('resetEmail').value;
+                    if (validateEmail(email)) {
+                        showAlert('Link reset password telah dikirim ke email Anda!', 'success');
+                        closeModal();
+                    } else {
+                        showAlert('Format email tidak valid!', 'error');
+                    }
+                });
+            }, 100);
+        });
+        
+        // Event listener untuk daftar
+        document.getElementById('daftarLink').addEventListener('click', function(e) {
+            e.preventDefault();
+            const content = `
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="regNama">Nama Lengkap</label>
+                        <input type="text" id="regNama" required placeholder="Masukkan nama lengkap">
+                    </div>
+                    <div class="form-group">
+                        <label for="regEmail">Email</label>
+                        <input type="email" id="regEmail" required placeholder="Masukkan email">
+                    </div>
+                    <div class="form-group">
+                        <label for="regPassword">Password</label>
+                        <input type="password" id="regPassword" required placeholder="Masukkan password">
+                    </div>
+                    <div class="form-group">
+                        <label for="regPasswordConfirm">Konfirmasi Password</label>
+                        <input type="password" id="regPasswordConfirm" required placeholder="Konfirmasi password">
+                    </div>
+                    <button type="submit" class="btn btn-primary btn-block">Daftar</button>
+                </form>
+            `;
+            createModal('Daftar Akun Baru', content);
+            
+            // Handle form register
+            setTimeout(() => {
+                document.getElementById('registerForm').addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    const nama = document.getElementById('regNama').value;
+                    const email = document.getElementById('regEmail').value;
+                    const password = document.getElementById('regPassword').value;
+                    const passwordConfirm = document.getElementById('regPasswordConfirm').value;
+                    
+                    if (!validateEmail(email)) {
+                        showAlert('Format email tidak valid!', 'error');
+                        return;
+                    }
+                    
+                    if (password !== passwordConfirm) {
+                        showAlert('Password dan konfirmasi password tidak sama!', 'error');
+                        return;
+                    }
+                    
+                    if (password.length < 6) {
+                        showAlert('Password minimal 6 karakter!', 'error');
+                        return;
+                    }
+                    
+                    showAlert('Pendaftaran berhasil! Silakan login.', 'success');
+                    closeModal();
+                });
+            }, 100);
+        });
+    </script>
+</body>
+</html>
